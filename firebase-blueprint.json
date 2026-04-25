@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "Task": {
+      "title": "Task",
+      "description": "A daily task or event",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "color": { "type": "string" },
+        "category": { "type": "string", "enum": ["urgent", "important", "in-progress", "none"] },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "completed": { "type": "boolean" },
+        "userId": { "type": "string" },
+        "googleEventId": { "type": "string" }
+      },
+      "required": ["title", "startTime", "endTime", "userId"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User preferences and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "notificationSounds": { "type": "string" },
+        "vibrationPatterns": { "type": "string" },
+        "darkMode": { "type": "boolean" },
+        "accentColor": { "type": "string" },
+        "googleConnected": { "type": "boolean" }
+      },
+      "required": ["uid"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "User specific tasks"
+    },
+    "/users/{userId}/profile/settings": {
+      "schema": "UserProfile",
+      "description": "User settings document"
+    }
+  }
+}

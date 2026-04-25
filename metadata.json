@@ -1,0 +1,6 @@
+{
+  "name": "Chronos Daily Planner",
+  "description": "A refined daily time planner with a circular clock interface, Google Calendar integration, and device synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
