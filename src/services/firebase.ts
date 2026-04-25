@@ -22,16 +22,29 @@ import {
   getDoc,
   Timestamp,
   getDocFromServer,
-  enableMultiTabIndexedDbPersistence
+  enableMultiTabIndexedDbPersistence,
+  initializeFirestore,
+  onSnapshotsInSync
 } from "firebase/firestore";
-import firebaseConfig from "../../firebase-applet-config.json";
+const firebaseConfig = {
+  apiKey: "AIzaSyDU8WbUwRJ2dMw9vT9L5GpOepFP8dR78qA",
+  authDomain: "chronos-planner-7a76c.firebaseapp.com",
+  projectId: "chronos-planner-7a76c",
+  storageBucket: "chronos-planner-7a76c.firebasestorage.app",
+  messagingSenderId: "1017401652576",
+  appId: "1:1017401652576:web:97f7245c36ba62d3c99a05",
+  measurementId: "G-P2GCD318XB"
+};
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(console.error);
 
-// Use the database ID from the config
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// Use initializeFirestore to force long-polling if needed (often helps in restricted iframe environments)
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  useFetchStreams: false // fetch streams can sometimes cause issues in sandboxed environments
+});
 
 // Enable offline persistence
 enableMultiTabIndexedDbPersistence(db).catch((err) => {
@@ -49,6 +62,9 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
  * CRITICAL for debugging networking and provisioning issues.
  */
 async function testConnection() {
+  // Give the environment a moment to stabilize
+  await new Promise(r => setTimeout(r, 2000));
+  
   try {
     // Attempting to read a non-existent document from a known collection pattern
     // to verify the client can reach the backend.
@@ -56,12 +72,16 @@ async function testConnection() {
     console.log("Firestore connection verified.");
   } catch (error: any) {
     if (error instanceof Error) {
-      if (error.message.includes('the client is offline') || error.message.includes('Could not reach Cloud Firestore')) {
-        console.error("CRITICAL: Firestore connection failed. Please check your Firebase configuration and network.", error);
-      } else if (error.message.includes('permission-denied')) {
+      const isOffline = error.message.includes('the client is offline') || 
+                        error.message.includes('Could not reach Cloud Firestore') ||
+                        error.code === 'unavailable';
+      
+      if (isOffline) {
+        console.warn("Firestore connectivity check: Client appears offline or connection restricted.", error.message);
+      } else if (error.message.includes('permission-denied') || error.code === 'permission-denied') {
         console.log("Firestore reachability confirmed (permission check succeeded).");
       } else {
-        console.warn("Firestore connection check produced an unexpected error:", error);
+        console.warn("Firestore connection check produced an unexpected result:", error.code || error.message);
       }
     }
   }

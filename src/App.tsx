@@ -118,7 +118,9 @@ export default function App() {
 
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
-      // Log global errors with more detail if possible
+      // Script error is usually a CORS issue in the iframe, safely ignore if no details
+      if (event.message === "Script error.") return;
+      
       console.warn("Caught global error:", event.error || event.message);
     };
     window.addEventListener("error", handleError);
@@ -166,7 +168,12 @@ export default function App() {
         return;
       }
       
-      if (error.code === "auth/popup-blocked") {
+      if (error.code === "auth/unauthorized-domain") {
+        toast.error("Domain Error", {
+          description: "This domain is not authorized in your Firebase console. Please add this URL to 'Authorized domains' in Firebase Authentication settings.",
+          duration: 8000
+        });
+      } else if (error.code === "auth/popup-blocked") {
         toast.error("Popup Blocked: Please enable popups for this site.");
       } else if (error.code === "auth/network-request-failed") {
         toast.error("Network Error: Could not reach Google. Try disabling VPN or refreshing.");
@@ -798,7 +805,11 @@ export default function App() {
         <main className="flex-1 p-6 space-y-8">
           <div className="flex flex-col items-center text-center space-y-4">
             <div className="w-24 h-24 rounded-full border-4 border-white dark:border-zinc-800 shadow-xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
-               <UserIcon className="w-12 h-12 text-zinc-400 dark:text-zinc-500" />
+              {user.photoURL ? (
+                <img src={user.photoURL} alt={user.displayName || "User"} className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon className="w-12 h-12 text-zinc-400 dark:text-zinc-500" />
+              )}
             </div>
             <div>
               <h3 className="text-2xl font-serif font-black">{user.displayName}</h3>
@@ -868,7 +879,7 @@ export default function App() {
                 <h4 className="text-xs uppercase tracking-widest font-black text-muted-foreground">Danger Zone</h4>
                 <Button 
                   variant="destructive" 
-                  onClick={() => signOut()} 
+                  onClick={() => { triggerFeedback('delete'); signOut(); setActiveView("home"); }} 
                   className="w-full rounded-2xl h-12 flex items-center justify-center gap-2"
                 >
                   <LogOut className="w-4 h-4" />
@@ -913,7 +924,11 @@ export default function App() {
                onClick={() => { triggerFeedback('click'); setActiveView("profile"); }} 
                className="rounded-full w-10 h-10 bg-white/50 dark:bg-zinc-800/50 shadow-sm border border-white/20 dark:border-white/10 p-0 overflow-hidden flex items-center justify-center"
              >
-               <UserIcon className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+               {user.photoURL ? (
+                 <img src={user.photoURL} alt={user.displayName || "User"} className="w-full h-full object-cover" />
+               ) : (
+                 <UserIcon className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+               )}
              </Button>
           </div>
         </div>
