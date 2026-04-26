@@ -431,31 +431,32 @@ export default function App() {
     });
   };
 
-  // 1. Fix loading flash: Show onboarding Step 0 immediately while authenticating
-  // We only show the splash spinner if we are explicitly "logging in" or if we wanted a separate state
-  // But per user request, we want the Welcome page to be instant.
-  if (loading && !user) {
-    // We'll fall through to the !user check below which renders onboarding step 0
-  } else if (loading && user) {
-    // This happens if we found a user but are still loading their settings/profile
+  // 1. Fix loading flash: Show a clean splash while authenticating
+  if (loading) {
     return (
       <div className="fixed inset-0 bg-[#FDF6E3] flex items-center justify-center">
         <motion.div 
-          initial={{ opacity: 0, scale: 0.8 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-24 h-24 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center border border-white"
+          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+          className="flex flex-col items-center space-y-6"
         >
-          <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-slate-800 animate-spin" />
+          <div className="w-20 h-20 bg-white rounded-[2.5rem] shadow-2xl flex items-center justify-center border border-white relative">
+            <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-blue-500/10 to-purple-500/10" />
+            <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-slate-800 animate-spin relative z-10" />
+          </div>
+          <motion.p 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-slate-800 font-serif italic text-xl font-medium"
+          >
+            Chronos
+          </motion.p>
         </motion.div>
       </div>
     );
   }
-
-  if (!user && !loading) {
-    // Normal onboarding flow finalized
-  }
-  
-  // Actually, to make it TRULY instant:
   if (!user) {
     const onboardingPages = [
       {
@@ -696,13 +697,19 @@ export default function App() {
         />
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 transition-all overflow-hidden relative z-10">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={onboardingStep}
-              initial={{ opacity: 0, scale: 0.9, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 1.1, y: -30 }}
-              transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+              initial={{ opacity: 0, x: 10, scale: 0.995 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -10, scale: 1.005 }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 400, 
+                damping: 35,
+                mass: 0.5,
+                restDelta: 0.001
+              }}
               className="max-w-md w-full flex flex-col items-center text-center space-y-2 md:space-y-8"
             >
               <motion.div 
