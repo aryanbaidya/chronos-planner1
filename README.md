@@ -98,7 +98,7 @@ chronos-planner/
 
 ## 👨‍💻 Developer
 
-**Aryan **
+**Aryan**
 - GitHub: [@aryanbaidya](https://github.com/aryanbaidya)
 
 ---
