@@ -43,7 +43,6 @@ setPersistence(auth, browserLocalPersistence).catch(console.error);
 // Use initializeFirestore to force long-polling if needed (often helps in restricted iframe environments)
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-  useFetchStreams: false // fetch streams can sometimes cause issues in sandboxed environments
 });
 
 // Enable offline persistence
@@ -72,16 +71,17 @@ async function testConnection() {
     console.log("Firestore connection verified.");
   } catch (error: any) {
     if (error instanceof Error) {
+      const firebaseError = error as any;
       const isOffline = error.message.includes('the client is offline') || 
                         error.message.includes('Could not reach Cloud Firestore') ||
-                        error.code === 'unavailable';
+                        firebaseError.code === 'unavailable';
       
       if (isOffline) {
         console.warn("Firestore connectivity check: Client appears offline or connection restricted.", error.message);
-      } else if (error.message.includes('permission-denied') || error.code === 'permission-denied') {
+      } else if (error.message.includes('permission-denied') || firebaseError.code === 'permission-denied') {
         console.log("Firestore reachability confirmed (permission check succeeded).");
       } else {
-        console.warn("Firestore connection check produced an unexpected result:", error.code || error.message);
+        console.warn("Firestore connection check produced an unexpected result:", firebaseError.code || error.message);
       }
     }
   }

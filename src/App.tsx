@@ -47,6 +47,8 @@ export default function App() {
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [mockupState, setMockupState] = useState({ view: '6h', hopping: false });
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(() => localStorage.getItem("chronos_is_guest") === "true");
+  const [hasAuthHint] = useState(() => localStorage.getItem("chronos_auth_hint") === "true");
   const [settings, setSettings] = useState({
     hideCompleted: false,
     darkMode: false,
@@ -130,6 +132,7 @@ export default function App() {
       setIsLoggingIn(false);
       setLoading(false);
       if (user) {
+        localStorage.setItem("chronos_auth_hint", "true");
         try {
           const profile = await getUserProfile(user.uid);
           if (profile) {
@@ -159,6 +162,9 @@ export default function App() {
       // Small timeout to allow state to settle
       await new Promise(r => setTimeout(r, 100));
       await signInWithGoogle();
+      setIsGuest(false);
+      localStorage.removeItem("chronos_is_guest");
+      localStorage.setItem("chronos_auth_hint", "true");
       toast.success("Successfully connected");
     } catch (error: any) {
       setIsLoggingIn(false);
@@ -204,10 +210,44 @@ export default function App() {
         isMounted = false;
         unsubscribe?.();
       };
+    } else if (isGuest) {
+      const localTasks = localStorage.getItem("chronos_local_tasks");
+      if (localTasks) {
+        try {
+          const parsed = JSON.parse(localTasks);
+          const mapped = parsed.map((t: any) => ({
+            ...t,
+            startTime: new Date(t.startTime),
+            endTime: new Date(t.endTime),
+            recurring: t.recurring ? {
+              ...t.recurring,
+              until: t.recurring.until ? new Date(t.recurring.until) : undefined
+            } : undefined
+          }));
+          setTasks(mapped);
+        } catch (e) {
+          console.error("Failed to parse local tasks:", e);
+        }
+      }
     } else {
       setTasks([]);
     }
-  }, [user]);
+  }, [user, isGuest]);
+
+  // Sync Guest Tasks to LocalStorage
+  useEffect(() => {
+    if (isGuest && !user) {
+      localStorage.setItem("chronos_local_tasks", JSON.stringify(tasks));
+    }
+  }, [tasks, isGuest, user]);
+
+  const continueAsGuest = () => {
+    setIsGuest(true);
+    localStorage.setItem("chronos_is_guest", "true");
+    localStorage.setItem("chronos_auth_hint", "true");
+    triggerFeedback('click');
+    toast.success("Using guest mode - data saved locally");
+  };
 
   // Periodic Reminder Check
   useEffect(() => {
@@ -279,7 +319,7 @@ export default function App() {
   };
 
   const handleTaskSave = async (taskData: Omit<Task, "id" | "userId"> & { id?: string }) => {
-    if (!user) return;
+    if (!user && !isGuest) return;
     
     // Ensure we preserve the ID if we are editing
     const finalTaskData = editingTask?.id ? { ...taskData, id: editingTask.id } : taskData;
@@ -291,14 +331,26 @@ export default function App() {
     }
 
     try {
+      if (isGuest && !user) {
+        if (finalTaskData.id) {
+          setTasks(prev => prev.map(t => t.id === finalTaskData.id ? { ...t, ...finalTaskData } as Task : t));
+        } else {
+          const newTask = { ...finalTaskData, id: crypto.randomUUID(), userId: 'guest' } as Task;
+          setTasks(prev => [...prev, newTask]);
+        }
+        triggerFeedback('success');
+        setEditingTask(null);
+        return;
+      }
+
       if (finalTaskData.id) {
         const { id, ...updates } = finalTaskData;
-        await updateTask(user.uid, finalTaskData.id, updates);
+        await updateTask(user!.uid, finalTaskData.id, updates);
         triggerFeedback('success');
         toast.success("Task updated");
       } else {
         // New task creation
-        await addTask(user.uid, finalTaskData);
+        await addTask(user!.uid, finalTaskData);
         triggerFeedback('success');
         
         // Handle recurrence only for NEW tasks to avoid duplication on each update
@@ -373,13 +425,17 @@ export default function App() {
   };
 
   const handleTaskDelete = async (id: string) => {
-    if (!user) return;
+    if (!user && !isGuest) return;
     
     const taskToDelete = tasks.find(t => t.id === id);
     if (!taskToDelete) return;
 
     try {
-      await deleteTask(user.uid, id);
+      if (isGuest && !user) {
+        setTasks(prev => prev.filter(t => t.id !== id));
+      } else {
+        await deleteTask(user!.uid, id);
+      }
       triggerFeedback('delete');
       
       toast.success("Task deleted", {
@@ -388,7 +444,11 @@ export default function App() {
           onClick: async () => {
             triggerFeedback('click');
             const { id: _, ...taskData } = taskToDelete;
-            await addTask(user.uid, taskData as any);
+            if (isGuest && !user) {
+              setTasks(prev => [...prev, { ...taskData, id, userId: 'guest' } as Task]);
+            } else {
+              await addTask(user!.uid, taskData as any);
+            }
             toast.success("Task restored");
           }
         },
@@ -431,33 +491,13 @@ export default function App() {
     });
   };
 
-  // 1. Fix loading flash: Show a clean splash while authenticating
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-[#FDF6E3] flex items-center justify-center">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          className="flex flex-col items-center space-y-6"
-        >
-          <div className="w-20 h-20 bg-white rounded-[2.5rem] shadow-2xl flex items-center justify-center border border-white relative">
-            <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-blue-500/10 to-purple-500/10" />
-            <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-slate-800 animate-spin relative z-10" />
-          </div>
-          <motion.p 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-slate-800 font-serif italic text-xl font-medium"
-          >
-            Chronos
-          </motion.p>
-        </motion.div>
-      </div>
-    );
+  // If we expect a user (signed in or guest before), show nothing while verifying
+  // This prevents the onboarding flash. New users will fall through to onboarding instantly.
+  if (loading && (hasAuthHint || isGuest)) {
+    return null;
   }
-  if (!user) {
+
+  if (!user && !isGuest) {
     const onboardingPages = [
       {
         title: "Master Your Time",
@@ -530,7 +570,7 @@ export default function App() {
                 <div className="h-1.5 w-2/3 bg-rose-400/15 rounded-full" />
               </div>
             </motion.div>
-
+ 
             {/* Right Card - Third in order */}
             <motion.div
               initial={{ opacity: 0, x: 0, y: 30, rotate: 0 }}
@@ -546,7 +586,7 @@ export default function App() {
                 <div className="h-1.5 w-2/3 bg-rose-400/15 rounded-full" />
               </div>
             </motion.div>
-
+ 
             {/* Center Card - First in order */}
             <motion.div
               initial={{ opacity: 0, y: 40, scale: 0.9 }}
@@ -591,7 +631,7 @@ export default function App() {
               
               {/* Central Pivot - Rose dot */}
               <div className="absolute w-4 h-4 bg-rose-500 rounded-full z-50 shadow-[0_0_10px_rgba(244,63,94,0.4)] border-2 border-white" />
-
+ 
               {/* Hands */}
               <motion.div 
                 animate={{ rotate: mockupState.view === '6h' ? 30 : 180 }}
@@ -605,7 +645,7 @@ export default function App() {
                 className="absolute w-1.5 h-24 bg-slate-700/60 rounded-full origin-bottom z-20"
                 style={{ bottom: "50%" }}
               />
-
+ 
               {/* Numbers */}
               {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
                 const angle = (num * 30);
@@ -628,7 +668,7 @@ export default function App() {
                   </motion.div>
                 );
               })}
-
+ 
               {/* Minute Ticks */}
               {Array.from({ length: 60 }).map((_, i) => (
                 <div 
@@ -652,13 +692,22 @@ export default function App() {
         description: "Ready to rediscover the beauty of a well-lived hour?",
         icon: <UserIcon className="w-12 h-12 text-slate-900" />,
         mockup: (
-          <Button 
-            onClick={handleLogin} 
-            disabled={isLoggingIn}
-            className="w-72 h-18 bg-white/10 backdrop-blur-[20px] hover:bg-white/20 text-slate-900 rounded-full text-xl font-black uppercase tracking-[0.2em] shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all hover:scale-105 active:scale-95 border border-white/60 ring-1 ring-black/5"
-          >
-            {isLoggingIn ? "Syncing..." : "Get Started"}
-          </Button>
+          <div className="flex flex-col items-center gap-4 w-full">
+            <Button 
+              onClick={handleLogin} 
+              disabled={isLoggingIn}
+              className="w-full max-w-[280px] h-16 bg-slate-900 hover:bg-slate-800 text-white rounded-full text-lg font-black uppercase tracking-[0.1em] shadow-xl transition-all hover:scale-[1.02] active:scale-95 border-2 border-white/20"
+            >
+              {isLoggingIn ? "Syncing..." : "Signup with Google"}
+            </Button>
+            <Button 
+              variant="ghost"
+              onClick={continueAsGuest}
+              className="text-slate-600 font-bold hover:bg-white/40 h-10 px-6 rounded-xl transition-all"
+            >
+              Continue without an account
+            </Button>
+          </div>
         )
       }
     ];
@@ -812,15 +861,15 @@ export default function App() {
         <main className="flex-1 p-6 space-y-8">
           <div className="flex flex-col items-center text-center space-y-4">
             <div className="w-24 h-24 rounded-full border-4 border-white dark:border-zinc-800 shadow-xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
-              {user.photoURL ? (
+              {user?.photoURL ? (
                 <img src={user.photoURL} alt={user.displayName || "User"} className="w-full h-full object-cover" />
               ) : (
                 <UserIcon className="w-12 h-12 text-zinc-400 dark:text-zinc-500" />
               )}
             </div>
             <div>
-              <h3 className="text-2xl font-serif font-black">{user.displayName}</h3>
-              <p className="text-sm text-muted-foreground font-mono">{user.email}</p>
+              <h3 className="text-2xl font-serif font-black">{user?.displayName || (isGuest ? "Guest Explorer" : "Explorer")}</h3>
+              <p className="text-sm text-muted-foreground font-mono">{user?.email || (isGuest ? "Tasks saved locally" : "Not signed in")}</p>
             </div>
           </div>
 
@@ -882,17 +931,50 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="space-y-1 pt-4">
-                <h4 className="text-xs uppercase tracking-widest font-black text-muted-foreground">Danger Zone</h4>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => { triggerFeedback('delete'); signOut(); setActiveView("home"); }} 
-                  className="w-full rounded-2xl h-12 flex items-center justify-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </Button>
-              </div>
+              {user ? (
+                <div className="space-y-1 pt-4">
+                  <h4 className="text-xs uppercase tracking-widest font-black text-muted-foreground">Danger Zone</h4>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => { triggerFeedback('delete'); localStorage.removeItem("chronos_auth_hint"); signOut(); setActiveView("home"); }} 
+                    className="w-full rounded-2xl h-12 flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4 pt-4">
+                  <h4 className="text-xs uppercase tracking-widest font-black text-muted-foreground">Account</h4>
+                  <p className="text-sm text-zinc-500">
+                    {isGuest 
+                      ? "You are using Guest Mode. Your tasks are only saved on this device. Sign in to backup and sync across devices." 
+                      : "Sign in to save and sync your tasks across devices."}
+                  </p>
+                  <Button 
+                    onClick={handleLogin}
+                    disabled={isLoggingIn}
+                    className="w-full rounded-2xl h-14 bg-slate-900 text-white font-black flex items-center justify-center gap-3"
+                  >
+                    <UserIcon className="w-5 h-5" />
+                    {isLoggingIn ? "Connecting..." : "Signup with Google"}
+                  </Button>
+                  {isGuest && (
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                            setIsGuest(false);
+                            localStorage.removeItem("chronos_is_guest");
+                            localStorage.removeItem("chronos_auth_hint");
+                            window.location.reload();
+                        }}
+                        className="w-full rounded-2xl h-12 border-rose-200 text-rose-600 hover:bg-rose-50"
+                      >
+                        Reset Guest Data & Onboarding
+                      </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </main>
@@ -931,7 +1013,7 @@ export default function App() {
                onClick={() => { triggerFeedback('click'); setActiveView("profile"); }} 
                className="rounded-full w-10 h-10 bg-white/50 dark:bg-zinc-800/50 shadow-sm border border-white/20 dark:border-white/10 p-0 overflow-hidden flex items-center justify-center"
              >
-               {user.photoURL ? (
+               {user?.photoURL ? (
                  <img src={user.photoURL} alt={user.displayName || "User"} className="w-full h-full object-cover" />
                ) : (
                  <UserIcon className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
