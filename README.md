@@ -20,8 +20,12 @@ A radial clock-based daily planner that maps your tasks as arc strips on a real 
 
 ## 📱 Screenshots
 
-> *(Add screenshots here)*
-
+> ![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/homescreen.jpg)
+> ![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/homescreendark.jpg)
+> ![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/taskcreationcard.jpg)
+> ![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/infocard.jpg)
+![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/summaryclock.jpg)
+> ![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/settings.jpg)
 ---
 
 ## 🛠️ Built With
