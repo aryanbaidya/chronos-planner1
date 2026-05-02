@@ -27,13 +27,13 @@ import {
   onSnapshotsInSync
 } from "firebase/firestore";
 const firebaseConfig = {
-  apiKey: "AIzaSyDU8WbUwRJ2dMw9vT9L5GpOepFP8dR78qA",
-  authDomain: "chronos-planner-7a76c.firebaseapp.com",
-  projectId: "chronos-planner-7a76c",
-  storageBucket: "chronos-planner-7a76c.firebasestorage.app",
-  messagingSenderId: "1017401652576",
-  appId: "1:1017401652576:web:97f7245c36ba62d3c99a05",
-  measurementId: "G-P2GCD318XB"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
@@ -43,7 +43,7 @@ setPersistence(auth, browserLocalPersistence).catch(console.error);
 // Use initializeFirestore to force long-polling if needed (often helps in restricted iframe environments)
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-});
+}, import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || "(default)");
 
 // Enable offline persistence
 enableMultiTabIndexedDbPersistence(db).catch((err) => {
