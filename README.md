@@ -20,13 +20,23 @@ A radial clock-based daily planner that maps your tasks as arc strips on a real 
 
 ## 📱 Screenshots
 
-> ![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/homescreen.jpg)
-> ![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/homescreendark.jpg)
-> ![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/taskcreationcard.jpg)
-> ![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/infocard.jpg)
-![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/summaryclock.jpg)
-> ![image alt](https://github.com/aryanbaidya/chronos-planner1/blob/2c20e72b09a50a9c077b450c8185e5dfc0ab9e24/settings.jpg)
----
+<div align="center">
+
+<img src="screenshots/homescreen.jpg" width="30%"/>
+&nbsp;
+<img src="screenshots/homescreendark.jpg" width="30%"/>
+&nbsp;
+<img src="screenshots/taskcreationcard.jpg" width="30%"/>
+
+<br/><br/>
+
+<img src="screenshots/infocard.jpg" width="30%"/>
+&nbsp;
+<img src="screenshots/summaryclock.jpg" width="30%"/>
+&nbsp;
+<img src="screenshots/settings.jpg" width="30%"/>
+
+</div>
 
 ## 🛠️ Built With
 
