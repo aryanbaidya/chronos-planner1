@@ -4,7 +4,7 @@ A radial clock-based daily planner that maps your tasks as arc strips on a real 
 
 ---
 
-## ✨ Features
+## Features
 
 - **Radial Clock UI** — Tasks are displayed as colored arc strips on a circular clock face
 - **Smart Overlap Detection** — Overlapping tasks automatically stack on outer rings, keeping the view clean
@@ -18,7 +18,7 @@ A radial clock-based daily planner that maps your tasks as arc strips on a real 
 
 ---
 
-## 📱 Screenshots
+## Screenshots
 
 <div align="center">
 
@@ -38,9 +38,8 @@ A radial clock-based daily planner that maps your tasks as arc strips on a real 
 
 </div>
 
-## 🛠️ Built With
+## Built With
 
-- **Google AI Studio** — AI-assisted development using Gemini
 - **React + Vite** — Frontend framework
 - **SVG** — Radial clock and arc rendering
 - **Firebase Authentication** — Google Sign-In
@@ -49,13 +48,13 @@ A radial clock-based daily planner that maps your tasks as arc strips on a real 
 
 ---
 
-## 🚀 Live Demo
+## Live Demo
 
-👉 [chronos-planner1.vercel.app](https://chronos-planner1.vercel.app)
+ [chronos-planner1.vercel.app](https://chronos-planner1.vercel.app)
 
 ---
 
-## 📦 Installation
+## Installation
 
 ```bash
 # Clone the repository
@@ -73,7 +72,7 @@ npm run dev
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 Create a `.env` file in the root directory and add your Gemini API key:
 
@@ -83,7 +82,7 @@ REACT_APP_GEMINI_API_KEY=your_api_key_here
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 chronos-planner/
@@ -101,22 +100,16 @@ chronos-planner/
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [ ] Offline support via Service Worker
 - [ ] Firebase Firestore for cloud task storage
 - [ ] Push notifications for reminders
-- [ ] Android app via PWABuilder
 
 ---
 
-## 👨‍💻 Developer
-
-**Aryan**
-- GitHub: [@aryanbaidya](https://github.com/aryanbaidya)
-
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
